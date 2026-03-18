@@ -1,28 +1,33 @@
 const express = require("express");
 const nodemailer = require("nodemailer");
 const cors = require("cors");
-app.use(cors({ origin: '*' }));
+
 const app = express();
+app.use(cors()); // Her yerden erişim için
 app.use(express.json());
 
-// PDF linkleri (her Dosha için aynı PDF örnek, istersen farklı PDF koyabilirsin)
+// PDF linkleri
 const pdfLinks = {
   vata: "https://85e80401-c2db-460d-885d-bada4419404e.usrfiles.com/ugd/987514_06aad9d80ba84877a40c94dbba18b5cc.pdf",
   pitta: "https://85e80401-c2db-460d-885d-bada4419404e.usrfiles.com/ugd/987514_06aad9d80ba84877a40c94dbba18b5cc.pdf",
   kapha: "https://85e80401-c2db-460d-885d-bada4419404e.usrfiles.com/ugd/987514_06aad9d80ba84877a40c94dbba18b5cc.pdf"
 };
 
-app.post("/send-pdf", async (req, res) => {
-  const { email, type } = req.body;
+app.get("/healthz", (req,res)=>{
+  res.send("OK"); // Render health check
+});
 
-  if (!email || !type) return res.status(400).json({ message: "Email ve type gerekli" });
+app.post("/send-pdf", async (req,res)=>{
+  console.log("Gelen veri:", req.body);
+  const { email, type } = req.body;
+  if(!email || !type) return res.status(400).json({ message: "Email ve type gerekli" });
 
   try {
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
-        user: "ozgekeskin373@gmail.com",
-        pass: "ognpkcinnmjhpobl" // Gmail uygulama şifresi
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_APP_PASSWORD
       }
     });
 
@@ -49,21 +54,19 @@ app.post("/send-pdf", async (req, res) => {
     `;
 
     await transporter.sendMail({
-      from: '"Çocuk Dosha Testi" <ozgekeskin373@gmail.com>',
+      from: `"Çocuk Dosha Testi" <${process.env.GMAIL_USER}>`,
       to: email,
       subject: `Çocuğunuzun sonucu: ${type.toUpperCase()}`,
       html: htmlContent
     });
 
+    console.log("Mail gönderildi:", email, type);
     res.json({ message: "PDF linki e-mailinize gönderildi!" });
-
-  } catch (err) {
-    console.error("HATA:", err);
+  } catch(err){
+    console.error("Mail Hatası:", err);
     res.status(500).json({ message: "Mail gönderilemedi!" });
   }
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log("Server çalışıyor:", PORT);
-});
+app.listen(PORT,()=>console.log("Server çalışıyor:", PORT));
