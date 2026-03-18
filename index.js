@@ -1,9 +1,8 @@
 const express = require("express");
 const nodemailer = require("nodemailer");
 const cors = require("cors");
-
+app.use(cors({ origin: '*' }));
 const app = express();
-app.use(cors());
 app.use(express.json());
 
 // PDF linkleri (her Dosha için aynı PDF örnek, istersen farklı PDF koyabilirsin)
